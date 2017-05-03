@@ -3,6 +3,7 @@
 #include <stdint.h>
 
 #include "common.h"
+#include "stdio.h"
 
 using node_webrtc::DataChannel;
 using node_webrtc::DataChannelObserver;
@@ -72,6 +73,7 @@ DataChannel::DataChannel(node_webrtc::DataChannelObserver* observer)
 
   // Re-queue cached observer events
   while (true) {
+    // printf("Size of _events: %d", (int) _events.size());
     uv_mutex_lock(&observer->lock);
     bool empty = observer->_events.empty();
     if (empty) {
@@ -139,6 +141,7 @@ void DataChannel::Run(uv_async_t* handle, int status) {
   bool do_shutdown = false;
 
   while (true) {
+    // printf("Running loop with _events: %d", (int) self->_events.size());
     uv_mutex_lock(&self->lock);
     bool empty = self->_events.empty();
     if (empty) {
@@ -184,20 +187,18 @@ void DataChannel::Run(uv_async_t* handle, int status) {
         array->ForceSet(Nan::New("byteLength").ToLocalChecked(), Nan::New<Integer>(static_cast<uint32_t>(data->size)));
 #endif
         // NanMakeWeakPersistent(callback, data, &MessageWeakCallback);
-
         argv[0] = array;
         Nan::MakeCallback(dc, callback, 1, argv);
       } else {
         Local<String> str = Nan::New(data->message, data->size).ToLocalChecked();
-
-        // cleanup message event
-        delete[] data->message;
-        data->message = nullptr;
-        delete data;
-
         argv[0] = str;
-        Nan::MakeCallback(dc, callback, 1, argv);
       }
+      // cleanup message event
+      delete[] data->message;
+      data->message = nullptr;
+      delete data;
+
+      Nan::MakeCallback(dc, callback, 1, argv);
     }
   }
 
@@ -245,10 +246,11 @@ NAN_METHOD(DataChannel::Send) {
       Local<v8::ArrayBufferView> view = Local<v8::ArrayBufferView>::Cast(info[0]);
       arraybuffer = view->Buffer();
     }
-
+    
     v8::ArrayBuffer::Contents content = arraybuffer->Externalize();
     rtc::Buffer buffer(static_cast<char*>(content.Data()), content.ByteLength());
 
+    delete static_cast<char*>(content.Data());
 #else
     Local<Object> arraybuffer = Local<Object>::Cast(info[0]);
     void* data = arraybuffer->GetIndexedPropertiesExternalArrayData();
