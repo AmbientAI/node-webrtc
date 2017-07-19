@@ -6,7 +6,7 @@
     "p2p",
     "peer"
   ],
-  "version": "0.0.63",
+  "version": "0.0.62",
   "author": "Alan K <ack@modeswitch.org> (http://blog.modeswitch.org)",
   "homepage": "http://js-platform.github.io/node-webrtc/",
   "bugs": "https://github.com/js-platform/node-webrtc/issues",
@@ -44,7 +44,7 @@
   },
   "scripts": {
     "download-webrtc-libraries-and-headers": "node scripts/download-webrtc-libraries-and-headers.js",
-    "install": "node-pre-gyp install --fallback-to-build",
+    "install": "node-pre-gyp install --debug --fallback-to-build",
     "test": "node test/all.js"
   }
 }

@@ -16,6 +16,9 @@
 #include "set-remote-description-observer.h"
 #include "stats-observer.h"
 
+#include "webrtc/system_wrappers/include/clock.h"
+#include "webrtc/test/fake_audio_device.h"
+
 using node_webrtc::PeerConnection;
 using v8::External;
 using v8::Function;
@@ -53,13 +56,13 @@ PeerConnection::PeerConnection(webrtc::PeerConnectionInterface::IceServers iceSe
   // FIXME: crashes without these constraints, why?
   constraints.AddMandatory(webrtc::MediaConstraintsInterface::kOfferToReceiveAudio, webrtc::MediaConstraintsInterface::kValueFalse);
   constraints.AddMandatory(webrtc::MediaConstraintsInterface::kOfferToReceiveVideo, webrtc::MediaConstraintsInterface::kValueFalse);
-
-  _jinglePeerConnectionFactory = webrtc::CreatePeerConnectionFactory(_workerThread, _signalingThread, nullptr, nullptr, nullptr);
+  
+  _audioDeviceModule = new webrtc::test::FakeAudioDevice(webrtc::Clock::GetRealTimeClock(), "/dev/null", 1.0f);
+  _jinglePeerConnectionFactory = webrtc::CreatePeerConnectionFactory(_workerThread, _signalingThread, _audioDeviceModule, nullptr, nullptr);
   _jinglePeerConnection = _jinglePeerConnectionFactory->CreatePeerConnection(configuration, &constraints, nullptr, nullptr, this);
 
   uv_mutex_init(&lock);
   uv_async_init(loop, &async, reinterpret_cast<uv_async_cb>(Run));
-
   async.data = this;
 }
 
